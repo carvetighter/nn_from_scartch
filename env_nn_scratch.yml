@@ -1,0 +1,13 @@
+name: nnsrtch
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - pandas
+  - numpy
+  - tensorflow
+  - pytorch
+  - pip
+  - pylint
+  - pip:
+    - TimerWrapper
