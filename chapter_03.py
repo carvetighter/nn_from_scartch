@@ -12,6 +12,7 @@ import nnfs
 from matplotlib import pyplot
 from nnfs.datasets import spiral_data
 from nn_class import Layer_Dense
+from nn_class import Activation_ReLU
 
 # some initializations
 nnfs.init()
