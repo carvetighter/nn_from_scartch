@@ -13,6 +13,7 @@ from matplotlib import pyplot
 from nnfs.datasets import spiral_data
 from nn_class import Layer_Dense
 
+# some initializations
 nnfs.init()
 
 '''
@@ -57,4 +58,5 @@ X, y = spiral_data(100, 3)
 
 dense1 = Layer_Dense(2, 3)
 dense1.forward(X)
+print(dense1.output.shape)
 print(dense1.output[:5])
