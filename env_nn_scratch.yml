@@ -8,6 +8,7 @@ dependencies:
   - numpy==1.19.1
   - tensorflow==2.1.0
   - pytorch==1.6.0
+  - matplotlib==3.2.2
   - pip==20.2.2
   - pylint==2.5.3
   - pip:
