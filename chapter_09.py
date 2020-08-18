@@ -1,9 +1,8 @@
 '''
-this file finishes chapter 5 from 
+this file finishes chapter 9 from 
 Neural Networks from Scratch
 
-added create_data function and Loss_CategoricalCrossentropy to nn_class file
-added loss and accuracy calculation
+added backward propigation with gradients for values, weights and biases
 '''
 
 '''
@@ -63,6 +62,12 @@ float_accuracy = numpy.mean(array_pred == y)
 nn backward pass
 '''
 
+loss_function.backward(activation2.output, y)
+activation2.backward(loss_function.dvalues)
+dense2.backward(activation2.dvalues)
+activtion1.backward(dense2.dvalues)
+dense1.backward(activtion1.dvalues)
+
 # results
 print('ddd dense1 output ddd')
 print(dense1.output.shape)
@@ -84,4 +89,16 @@ print('ddd loss ddd')
 print(float_loss, '\n')
 
 print('ddd accuracy ddd')
-print(float_accuracy)
+print(float_accuracy, '\n')
+
+print('ddd dense2 gradient weights ddd')
+print(dense2.dweights, '\n')
+
+print('ddd dense2 gradient biases ddd')
+print(dense2.dbiases, '\n')
+
+print('ddd dense1 gradient weights ddd')
+print(dense1.dweights, '\n')
+
+print('ddd dense1 gradient biases ddd')
+print(dense1.dbiases)

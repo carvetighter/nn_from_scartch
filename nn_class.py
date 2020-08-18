@@ -37,6 +37,7 @@ class Loss_CategoricalCrossetropy(object):
         '''
         '''
         self.float_mean_loss = None
+        self.dvalues = None
     
     def forward(self, y_pred, y_true):
         '''
@@ -51,10 +52,21 @@ class Loss_CategoricalCrossetropy(object):
         :return: categorical cross-entorpy loss of a network
         '''
         int_num_samples = len(y_pred)
-        y_pred = y_pred[range(0, int_num_samples), y_true]
-        array_neg_log_likilihoods = -numpy.log(y_pred)
-        self.float_mean_loss = numpy.mean(array_neg_log_likilihoods)
+        if len(y_true.shape) == 1:
+            y_pred = y_pred[range(0, int_num_samples), y_true]
+        array_neg_log_likelihoods = -numpy.log(y_pred)
+        if len(y_true.shape) == 2:
+            array_neg_log_likelihoods *= y_true
+        self.float_mean_loss = numpy.mean(array_neg_log_likelihoods)
         return self.float_mean_loss
+    
+    def backward(self, dvalues, y_true):
+        '''
+        '''
+        int_num_samples = len(dvalues)
+        self.dvalues = dvalues.copy()
+        self.dvalues[range(0, int_num_samples), y_true] -= 1
+        self.dvalues = self.dvalues / int_num_samples
         
 class Activation_Softmax(object):
     '''
@@ -64,23 +76,40 @@ class Activation_Softmax(object):
         '''
         # not this will be the probabilities of the activation
         self.output = None
+        self.inputs = None
+        self.dvalues = None
     
     def forward(self, inputs):
         '''
         '''
+        self.inputs = inputs
         exp_values = numpy.exp(inputs - numpy.max(inputs, axis = 1, keepdims = True))
         self.output = exp_values / numpy.sum(exp_values, axis = 1, keepdims = True)
+    
+    def backward(self, dvalues):
+        '''
+        '''
+        self.dvalues = dvalues.copy()
 
 class Activation_ReLU(object):
     def __init__(self):
         '''
         '''
+        self.inputs = None
         self.output = None
+        self.dvalues = None
     
     def forward(self, inputs):
         '''
         '''
+        self.inputs = inputs
         self.output = numpy.maximum(0., inputs)
+    
+    def backward(self, dvalues):
+        '''
+        '''
+        self.dvalues = dvalues.copy()
+        self.dvalues[self.inputs <= 0] = 0
 
 class Layer_Dense(object):
     '''
@@ -93,12 +122,25 @@ class Layer_Dense(object):
         self.weights = 0.01 * numpy.random.randn(inputs, neurons)
         self.biases = numpy.zeros(shape = (1, neurons))
         self.output = None
+        self.inputs = None
+        self.dweights = None
+        self.dbiases = None
+        self.dbalues = None
     
     # forward pass
     def forward(self, inputs):
         '''
         '''
+        self.inputs = inputs
         self.output = numpy.dot(inputs, self.weights) + self.biases
+    
+    # backward pass
+    def backward(self, dvalues):
+        '''
+        '''
+        self.dweights = numpy.dot(self.inputs.T, dvalues)
+        self.dbiases = numpy.sum(dvalues, axis = 0, keepdims = True)
+        self.dvalues = numpy.dot(dvalues, self.weights.T)
 
 '''
 apply functions
