@@ -12,10 +12,50 @@ import numpy
 suppotive functions
 '''
 
+def create_data(m_int_points, m_int_classes):
+    '''
+    '''
+    X = numpy.zeros((m_int_points * m_int_classes, 2))
+    y = numpy.zeros((m_int_points * m_int_classes), dtype = 'uint8')
+    for int_class_number in range(0, m_int_classes):
+        ix = range(m_int_points * int_class_number, m_int_points * (int_class_number + 1))
+        r = numpy.linspace(0.0, 1, m_int_points) # radius
+        t = numpy.linspace(int_class_number * 4, (int_class_number + 1) * 4, m_int_points) \
+            + numpy.random.randn(m_int_points) * 0.5
+        X[ix] = numpy.c_[r * numpy.sin(t * 2.5), r * numpy.cos(t * 2.5)]
+        y[ix] = int_class_number
+    return X, y
+
 '''
 classes
 '''
 
+class Loss_CategoricalCrossetropy(object):
+    '''
+    '''
+    def __init__(self):
+        '''
+        '''
+        self.float_mean_loss = None
+    
+    def forward(self, y_pred, y_true):
+        '''
+        method used to predict the corss entorpy loss; usually after the softmax of the 
+        output layer
+
+        :param numpy.array y_pred: array of floats by class which are the probibilites of
+            each class; each row in the array is a sample; each column is a class
+        :param numpy.array y_true: array of boolean ints (0, 1) which indicate the class
+            is true prediction; each row in the array is a sample; each column is a class
+        :rtype: float
+        :return: categorical cross-entorpy loss of a network
+        '''
+        int_num_samples = len(y_pred)
+        y_pred = y_pred[range(0, int_num_samples), y_true]
+        array_neg_log_likilihoods = -numpy.log(y_pred)
+        self.float_mean_loss = numpy.mean(array_neg_log_likilihoods)
+        return self.float_mean_loss
+        
 class Activation_Softmax(object):
     '''
     '''
