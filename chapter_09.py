@@ -55,8 +55,8 @@ float_loss = loss_function.forward(activation2.output, y)
 nn performance metrics
 '''
 
-array_pred = numpy.argmax(activation2.output, axis = 1)
-float_accuracy = numpy.mean(array_pred == y)
+array_y_pred = numpy.argmax(activation2.output, axis = 1)
+float_accuracy = numpy.mean(array_y_pred == y)
 
 '''
 nn backward pass
@@ -68,7 +68,10 @@ dense2.backward(activation2.dvalues)
 activtion1.backward(dense2.dvalues)
 dense1.backward(activtion1.dvalues)
 
-# results
+'''
+results
+'''
+
 print('ddd dense1 output ddd')
 print(dense1.output.shape)
 print(dense1.output[:5], '\n')
@@ -92,13 +95,25 @@ print('ddd accuracy ddd')
 print(float_accuracy, '\n')
 
 print('ddd dense2 gradient weights ddd')
+print(dense2.dweights.shape)
 print(dense2.dweights, '\n')
 
+print('ddd dense2 gradient values ddd')
+print(dense2.dvalues.shape)
+print(dense2.dvalues[:5], '\n')
+
 print('ddd dense2 gradient biases ddd')
+print(dense2.dbiases.shape)
 print(dense2.dbiases, '\n')
 
 print('ddd dense1 gradient weights ddd')
+print(dense1.dvalues.shape)
 print(dense1.dweights, '\n')
 
+print('ddd dense2 gradient values ddd')
+print(dense1.dvalues.shape)
+print(dense1.dvalues[:5], '\n')
+
 print('ddd dense1 gradient biases ddd')
+print(dense1.dbiases.shape)
 print(dense1.dbiases)
