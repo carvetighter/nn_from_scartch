@@ -1,5 +1,5 @@
 '''
-this file finishes chapter 10 from 
+this file finishes chapter 11 from 
 Neural Networks from Scratch
 
 ??
@@ -31,6 +31,7 @@ plot spiral data
 '''
 
 X, y = create_data(100, 3)
+X_test, y_test = create_data(100, 3)
 
 # X, y = spiral_data(100, 3)
 # pyplot.scatter(X[:, 0], X[:, 1], c = y, cmap = 'brg')
@@ -53,6 +54,9 @@ loss_function = Loss_CategoricalCrossetropy()
 optimizer = Optimizer_Adam(learning_rate = 0.05, decay = 1e-8)
 bool_verbose = False
 
+'''
+train the model
+'''
 for int_epoch in range(0, 10001):
     '''
     nn forward pass
@@ -138,3 +142,21 @@ for int_epoch in range(0, 10001):
             print('ddd dense1 gradient biases ddd')
             print(dense1.dbiases.shape)
             print(dense1.dbiases)
+
+'''
+test the model
+'''
+# nn forward pass
+dense1.forward(X_test)
+activtion1.forward(dense1.output)
+dense2.forward(activtion1.output)
+activation2.forward(dense2.output)
+float_test_loss = loss_function.forward(activation2.output, y_test)
+
+# nn performance metrics & predictions
+array_y_test_pred = numpy.argmax(activation2.output, axis = 1)
+float_test_accuracy = numpy.mean(array_y_test_pred == y_test)
+
+# results
+string_test_results = 'ddd test results -> loss = {:.5f}, accuracy = {:.5f} ddd'
+print(string_test_results.format(float_test_loss, float_test_accuracy))
