@@ -69,15 +69,9 @@ activtion1.backward(dense2.dvalues)
 dense1.backward(activtion1.dvalues)
 
 '''
-debug code
-'''
-
-print(loss_function.dvalues[:5])
-
-'''
 results
 '''
-'''
+
 print('ddd dense1 output ddd')
 print(dense1.output.shape)
 print(dense1.output[:5], '\n')
@@ -123,4 +117,3 @@ print(dense2.dvalues[:5], '\n')
 print('ddd dense2 gradient biases ddd')
 print(dense2.dbiases.shape)
 print(dense2.dbiases, '\n')
-'''
