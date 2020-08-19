@@ -1,8 +1,8 @@
 '''
-this file finishes chapter 9 from 
+this file finishes chapter 10 from 
 Neural Networks from Scratch
 
-added backward propigation with gradients for values, weights and biases
+
 '''
 
 '''
@@ -10,9 +10,9 @@ imports
 '''
 
 import numpy
-import nnfs
+# import nnfs
 from matplotlib import pyplot
-from nnfs.datasets import spiral_data
+# from nnfs.datasets import spiral_data
 from nn_class import Layer_Dense
 from nn_class import Activation_ReLU
 from nn_class import Activation_Softmax
@@ -20,7 +20,7 @@ from nn_class import Loss_CategoricalCrossetropy
 from nn_class import create_data
 
 # some initializations
-nnfs.init()
+# nnfs.init()
 
 '''
 plot spiral data
@@ -69,9 +69,15 @@ activtion1.backward(dense2.dvalues)
 dense1.backward(activtion1.dvalues)
 
 '''
-results
+debug code
 '''
 
+print(loss_function.dvalues[:5])
+
+'''
+results
+'''
+'''
 print('ddd dense1 output ddd')
 print(dense1.output.shape)
 print(dense1.output[:5], '\n')
@@ -94,6 +100,18 @@ print(float_loss, '\n')
 print('ddd accuracy ddd')
 print(float_accuracy, '\n')
 
+print('ddd dense1 gradient weights ddd')
+print(dense1.dweights.shape)
+print(dense1.dweights, '\n')
+
+print('ddd dense1 gradient values ddd')
+print(dense1.dvalues.shape)
+print(dense1.dvalues[:5], '\n')
+
+print('ddd dense1 gradient biases ddd')
+print(dense1.dbiases.shape)
+print(dense1.dbiases)
+
 print('ddd dense2 gradient weights ddd')
 print(dense2.dweights.shape)
 print(dense2.dweights, '\n')
@@ -105,15 +123,4 @@ print(dense2.dvalues[:5], '\n')
 print('ddd dense2 gradient biases ddd')
 print(dense2.dbiases.shape)
 print(dense2.dbiases, '\n')
-
-print('ddd dense1 gradient weights ddd')
-print(dense1.dvalues.shape)
-print(dense1.dweights, '\n')
-
-print('ddd dense2 gradient values ddd')
-print(dense1.dvalues.shape)
-print(dense1.dvalues[:5], '\n')
-
-print('ddd dense1 gradient biases ddd')
-print(dense1.dbiases.shape)
-print(dense1.dbiases)
+'''

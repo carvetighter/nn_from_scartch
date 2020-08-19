@@ -7,6 +7,14 @@ imports
 '''
 
 import numpy
+import random
+
+'''
+set-up
+'''
+
+random.seed(0)
+numpy.random.seed(0)
 
 '''
 suppotive functions
@@ -21,7 +29,7 @@ def create_data(m_int_points, m_int_classes):
         ix = range(m_int_points * int_class_number, m_int_points * (int_class_number + 1))
         r = numpy.linspace(0.0, 1, m_int_points) # radius
         t = numpy.linspace(int_class_number * 4, (int_class_number + 1) * 4, m_int_points) \
-            + numpy.random.randn(m_int_points) * 0.5
+            + numpy.random.randn(m_int_points) * 0.2
         X[ix] = numpy.c_[r * numpy.sin(t * 2.5), r * numpy.cos(t * 2.5)]
         y[ix] = int_class_number
     return X, y
@@ -29,87 +37,6 @@ def create_data(m_int_points, m_int_classes):
 '''
 classes
 '''
-
-class Loss_CategoricalCrossetropy(object):
-    '''
-    '''
-    def __init__(self):
-        '''
-        '''
-        self.float_mean_loss = None
-        self.dvalues = None
-    
-    def forward(self, y_pred, y_true):
-        '''
-        method used to predict the corss entorpy loss; usually after the softmax of the 
-        output layer
-
-        :param numpy.array y_pred: array of floats by class which are the probibilites of
-            each class; each row in the array is a sample; each column is a class
-        :param numpy.array y_true: array of boolean ints (0, 1) which indicate the class
-            is true prediction; each row in the array is a sample; each column is a class
-        :rtype: float
-        :return: categorical cross-entorpy loss of a network
-        '''
-        int_num_samples = len(y_pred)
-        if len(y_true.shape) == 1:
-            y_pred = y_pred[range(0, int_num_samples), y_true]
-        array_neg_log_likelihoods = -numpy.log(y_pred)
-        if len(y_true.shape) == 2:
-            array_neg_log_likelihoods *= y_true
-        self.float_mean_loss = numpy.mean(array_neg_log_likelihoods)
-        return self.float_mean_loss
-    
-    def backward(self, dvalues, y_true):
-        '''
-        '''
-        int_num_samples = len(dvalues)
-        self.dvalues = dvalues.copy()
-        self.dvalues[range(0, int_num_samples), y_true] -= 1
-        self.dvalues = self.dvalues / int_num_samples
-        
-class Activation_Softmax(object):
-    '''
-    '''
-    def __init__(self):
-        '''
-        '''
-        # not this will be the probabilities of the activation
-        self.output = None
-        self.inputs = None
-        self.dvalues = None
-    
-    def forward(self, inputs):
-        '''
-        '''
-        self.inputs = inputs
-        exp_values = numpy.exp(inputs - numpy.max(inputs, axis = 1, keepdims = True))
-        self.output = exp_values / numpy.sum(exp_values, axis = 1, keepdims = True)
-    
-    def backward(self, dvalues):
-        '''
-        '''
-        self.dvalues = dvalues.copy()
-
-class Activation_ReLU(object):
-    def __init__(self):
-        '''
-        '''
-        self.inputs = None
-        self.output = None
-        self.dvalues = None
-    
-    def forward(self, inputs):
-        '''
-        '''
-        self.inputs = inputs
-        self.output = numpy.maximum(0., inputs)
-    
-    def backward(self, dvalues):
-        '''
-        '''
-        self.dvalues = dvalues.copy()
-        self.dvalues[self.inputs <= 0] = 0
 
 class Layer_Dense(object):
     '''
@@ -141,6 +68,103 @@ class Layer_Dense(object):
         self.dweights = numpy.dot(self.inputs.T, dvalues)
         self.dbiases = numpy.sum(dvalues, axis = 0, keepdims = True)
         self.dvalues = numpy.dot(dvalues, self.weights.T)
+
+class Activation_ReLU(object):
+    def __init__(self):
+        '''
+        '''
+        self.inputs = None
+        self.output = None
+        self.dvalues = None
+    
+    def forward(self, inputs):
+        '''
+        '''
+        self.inputs = inputs
+        self.output = numpy.maximum(0., inputs)
+    
+    def backward(self, dvalues):
+        '''
+        '''
+        self.dvalues = dvalues.copy()
+        self.dvalues[self.inputs <= 0] = 0
+
+class Activation_Softmax(object):
+    '''
+    '''
+    def __init__(self):
+        '''
+        '''
+        # not this will be the probabilities of the activation
+        self.output = None
+        self.inputs = None
+        self.dvalues = None
+    
+    def forward(self, inputs):
+        '''
+        '''
+        self.inputs = inputs
+        exp_values = numpy.exp(inputs - numpy.max(inputs, axis = 1, keepdims = True))
+        prob = exp_values / numpy.sum(exp_values, axis = 1, keepdims = True)
+        self.output = prob
+
+    def backward(self, dvalues):
+        '''
+        '''
+        self.dvalues = dvalues.copy()
+
+class Loss_CategoricalCrossetropy(object):
+    '''
+    '''
+    def __init__(self):
+        '''
+        '''
+        self.float_mean_loss = None
+        self.dvalues = None
+    
+    def forward(self, y_pred, y_true):
+        '''
+        method used to predict the corss entorpy loss; usually after the softmax of the 
+        output layer
+
+        :param numpy.array y_pred: array of floats by class which are the probibilites of
+            each class; each row in the array is a sample; each column is a class
+        :param numpy.array y_true: array of boolean ints (0, 1) which indicate the class
+            is true prediction; each row in the array is a sample; each column is a class
+        :rtype: float
+        :return: categorical cross-entorpy loss of a network
+        '''
+        int_num_samples = y_pred.shape[0]
+        if len(y_true.shape) == 1:
+            y_pred = y_pred[range(0, int_num_samples), y_true]
+        array_neg_log_likelihoods = -numpy.log(y_pred)
+        if len(y_true.shape) == 2:
+            array_neg_log_likelihoods *= y_true
+        self.float_mean_loss = numpy.sum(array_neg_log_likelihoods) / int_num_samples
+        return self.float_mean_loss
+    
+    def backward(self, dvalues, y_true):
+        '''
+        '''
+        int_num_samples = dvalues.shape[0]
+        self.dvalues = dvalues.copy()
+        self.dvalues[range(0, int_num_samples), y_true] -= 1
+        self.dvalues = self.dvalues / int_num_samples
+ 
+class Optimizer_SGD(object):
+    '''
+    '''
+
+    def __init__(self, m_learning_rate = 1.0):
+        '''
+        '''
+        self.learning_rate = m_learning_rate
+    
+    def update_params(self, layer):
+        '''
+        '''
+        layer.weights += -self.learning_rate * layer.dweights
+        layer.biases += -self.learning_rate * layer.dbiases
 
 '''
 apply functions
