@@ -10,9 +10,9 @@ imports
 '''
 
 import numpy
-import nnfs
+# import nnfs
 from matplotlib import pyplot
-from nnfs.datasets import spiral_data
+# from nnfs.datasets import spiral_data
 from nn_class import Layer_Dense
 from nn_class import Activation_ReLU
 from nn_class import Activation_Softmax
@@ -36,15 +36,15 @@ X, y = create_data(100, 3)
 create nn objects
 '''
 
-dense1 = Layer_Dense(2, 3)
+dense1 = Layer_Dense(2, 64)
 activtion1 = Activation_ReLU()
-dense2 = Layer_Dense(3, 3)
+dense2 = Layer_Dense(64, 3)
 activation2 = Activation_Softmax()
 loss_function = Loss_CategoricalCrossetropy()
 optimizer = Optimizer_SGD()
-bool_verbose = True
+bool_verbose = False
 
-for int_epoch in range(0, 1):
+for int_epoch in range(0, 10001):
 
     '''
     nn forward pass
