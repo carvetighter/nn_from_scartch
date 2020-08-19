@@ -359,7 +359,6 @@ class Optimizer_Adam(object):
         '''
         self.iterations += 1
 
-
 '''
 apply functions
 '''
