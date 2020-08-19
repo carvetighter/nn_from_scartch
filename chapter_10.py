@@ -19,6 +19,8 @@ from nn_class import Activation_Softmax
 from nn_class import Loss_CategoricalCrossetropy
 from nn_class import Optimizer_SGD
 from nn_class import Optimizer_Adagrad
+from nn_class import Optimizer_RMSprop
+from nn_class import Optimizer_Adam
 from nn_class import create_data
 
 # some initializations
@@ -44,7 +46,10 @@ activation2 = Activation_Softmax()
 loss_function = Loss_CategoricalCrossetropy()
 # optimizer = Optimizer_SGD(decay = 5e-8)
 # optimizer = Optimizer_SGD(decay = 1e-8, momentum = 0.7)
-optimizer = Optimizer_Adagrad(decay = 1e-8)
+# optimizer = Optimizer_Adagrad(decay = 1e-8)
+# optimizer = Optimizer_RMSprop(decay = 1e-8)
+# optimizer = Optimizer_RMSprop(learning_rate = 0.05, decay = 4e-8, rho = 0.999)
+optimizer = Optimizer_Adam(learning_rate = 0.05, decay = 1e-8)
 bool_verbose = False
 
 for int_epoch in range(0, 10001):
@@ -91,7 +96,7 @@ for int_epoch in range(0, 10001):
     if int_epoch % 1000 == 0:
         print('ddd for epoch {}: loss = {:.5f} ddd'.format(int_epoch, float_loss))
         print('ddd for epoch {}: accuracy = {:.5f} ddd'.format(int_epoch, float_accuracy))
-        print('ddd for epoch {}: learning rate = {} ddd\n'.format(int_epoch, optimizer.current_learning_rate))
+        print('ddd for epoch {}: learning rate = {:.5f} ddd\n'.format(int_epoch, optimizer.current_learning_rate))
 
         if bool_verbose:
             print('ddd dense1 output ddd')
