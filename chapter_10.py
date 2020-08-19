@@ -18,6 +18,7 @@ from nn_class import Activation_ReLU
 from nn_class import Activation_Softmax
 from nn_class import Loss_CategoricalCrossetropy
 from nn_class import Optimizer_SGD
+from nn_class import Optimizer_Adagrad
 from nn_class import create_data
 
 # some initializations
@@ -41,7 +42,9 @@ activtion1 = Activation_ReLU()
 dense2 = Layer_Dense(64, 3)
 activation2 = Activation_Softmax()
 loss_function = Loss_CategoricalCrossetropy()
-optimizer = Optimizer_SGD()
+# optimizer = Optimizer_SGD(decay = 5e-8)
+# optimizer = Optimizer_SGD(decay = 1e-8, momentum = 0.7)
+optimizer = Optimizer_Adagrad(decay = 1e-8)
 bool_verbose = False
 
 for int_epoch in range(0, 10001):
@@ -77,15 +80,18 @@ for int_epoch in range(0, 10001):
     optimize / update weights & biases
     '''
 
+    optimizer.pre_update_params()
     optimizer.update_params(dense1)
     optimizer.update_params(dense2)
+    optimizer.post_update_params()
 
     '''
     results
     '''
     if int_epoch % 1000 == 0:
-        print('ddd for epoch {}: loss = {}ddd'.format(int_epoch, float_loss))
-        print('ddd for epoch {}: accuracy = {} ddd\n'.format(int_epoch, float_accuracy))
+        print('ddd for epoch {}: loss = {:.5f} ddd'.format(int_epoch, float_loss))
+        print('ddd for epoch {}: accuracy = {:.5f} ddd'.format(int_epoch, float_accuracy))
+        print('ddd for epoch {}: learning rate = {} ddd\n'.format(int_epoch, optimizer.current_learning_rate))
 
         if bool_verbose:
             print('ddd dense1 output ddd')
