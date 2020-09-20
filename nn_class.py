@@ -43,17 +43,30 @@ class Layer_Dense(object):
     '''
 
     # constructor
-    def __init__(self, inputs, neurons):
+    def __init__(self, inputs, neurons, weight_regularization_l1 = 0.,
+        weight_regularization_l2 = 0., bias_regularization_l1 = 0.,
+        bias_regularization_l2 = 0.):
         '''
         '''
+        # initial weight & bias
         self.weights = 0.01 * numpy.random.randn(inputs, neurons)
         self.biases = numpy.zeros(shape = (1, neurons))
-        self.output = None
-        self.inputs = None
+
+        # regularization
+        self.weight_regularization_l1 = weight_regularization_l1
+        self.weight_regularization_l2 = weight_regularization_l2
+        self.bias_regularization_l1 = bias_regularization_l1
+        self.bias_regularization_l2 = bias_regularization_l2
+
+        # deltas
         self.dweights = None
         self.dbiases = None
-        self.dbalues = None
-    
+        self.dinputs = None
+
+        # inputs / output
+        self.output = None
+        self.inputs = None
+        
     # forward pass
     def forward(self, inputs):
         '''
@@ -65,9 +78,33 @@ class Layer_Dense(object):
     def backward(self, dvalues):
         '''
         '''
+        # gradients on paramaters
         self.dweights = numpy.dot(self.inputs.T, dvalues)
         self.dbiases = numpy.sum(dvalues, axis = 0, keepdims = True)
-        self.dvalues = numpy.dot(dvalues, self.weights.T)
+        
+        # gradients on regularization
+        # l1 on weights
+        if self.weight_regularization_l1 > 0.:
+            dl1 = self.weights.copy()
+            dl1[dl1 >= 0] = 1
+            dl1[dl1 < 0] = -1
+            self.dweights += self.weight_regularization_l1 * dl1
+        
+        # l2 on weights
+        if self.weight_regularization_l2 > 0.:
+            self.dweights += 2 * self.weight_regularization_l2 * self.weights
+        
+        if self.bias_regularization_l1 > 0.:
+            dl1 = self.biases.copy()
+            dl1[dl1 >= 0] = 1
+            dl1[dl1 < 0] = -1
+            self.dbiases += self.bias_regularization_l1 * dl1
+        
+        if self.bias_regularization_l2 > 0.:
+            self.dbiases += 2 * self.bias_regularization_l2 * self.biases
+
+        # gradients on values
+        self.dinputs = numpy.dot(dvalues, self.weights.T)
 
 class Activation_ReLU(object):
     def __init__(self):
@@ -75,7 +112,7 @@ class Activation_ReLU(object):
         '''
         self.inputs = None
         self.output = None
-        self.dvalues = None
+        self.dinputs = None
     
     def forward(self, inputs):
         '''
@@ -86,8 +123,8 @@ class Activation_ReLU(object):
     def backward(self, dvalues):
         '''
         '''
-        self.dvalues = dvalues.copy()
-        self.dvalues[self.inputs <= 0] = 0
+        self.dinputs = dvalues.copy()
+        self.dinputs[self.inputs <= 0] = 0
 
 class Activation_Softmax(object):
     '''
@@ -98,7 +135,7 @@ class Activation_Softmax(object):
         # not this will be the probabilities of the activation
         self.output = None
         self.inputs = None
-        self.dvalues = None
+        self.dinputs = None
     
     def forward(self, inputs):
         '''
@@ -111,16 +148,76 @@ class Activation_Softmax(object):
     def backward(self, dvalues):
         '''
         '''
-        self.dvalues = dvalues.copy()
+        # set-up
+        self.dinputs = dvalues.copy()
 
-class Loss_CategoricalCrossetropy(object):
+        # enumerate outputs & gradients
+        for index, (single_output, single_dvalues) in enumerate(zip(self.output, dvalues)):
+            # flatten output array
+            single_output = single_output.reshape(1, -1)
+
+            # calculate jacobian matrix of the output & 
+            jacobian_matrix = numpy.diagflat(single_output) - \
+                numpy.dot(single_output, single_output.T)
+            
+            # calculate sample-wise gradient
+            self.dinputs[index] = numpy.dot(jacobian_matrix, single_dvalues)
+
+class Loss(object):
+    '''
+    base class for loss calculations
+    '''
+    def __init__(self):
+        '''
+        '''
+        self.float_regularization_loss = 0.
+        self.float_data_loss = 0.
+    
+    def regularization_loss(self, layer):
+        '''
+        '''
+        # l1 regularization (weights); calculate only when factor > 0
+        if layer.weight_regularization_l1 > 0.:
+            self.float_regularization_loss += layer.weight_regularization_l1 * \
+                numpy.sum(numpy.abs(layer.weights))
+        
+        # l2 regularization (weights)
+        if layer.weight_regularization_l2 > 0.:
+            self.float_regularization_loss += layer.weight_regularization_l2 * \
+                numpy.sum(layer.weights * layer.weights)
+        
+        # l1 regularization (biases); calculate when factor > 0
+        if layer.bias_regularization_l1 > 0.:
+            self.float_regularization_loss += layer.bias_regularization_l1 * \
+                numpy.sum(numpy.abs(layer.biases))
+        
+        # l2 regularization (biases)
+        if layer.bias_regularization_l2 > 0.:
+            self.float_regularization_loss += layer.bias_regularization_l2 * \
+                numpy.sum(layer.biases * layer.biases)
+        
+        return self.float_regularization_loss
+    
+    def calculate(self, output, y):
+        '''
+        '''
+        # calculate sample loss
+        sample_loss = self.forward(output, y)
+
+        # calculate mean loss
+        self.float_data_loss = numpy.mean(sample_loss)
+
+        return self.float_data_loss
+    
+class Loss_CategoricalCrossetropy(Loss):
     '''
     '''
     def __init__(self):
         '''
         '''
+        super(Loss_CategoricalCrossetropy, self).__init__()
         self.float_mean_loss = None
-        self.dvalues = None
+        self.dinputs = None
     
     def forward(self, y_pred, y_true):
         '''
@@ -131,26 +228,37 @@ class Loss_CategoricalCrossetropy(object):
             each class; each row in the array is a sample; each column is a class
         :param numpy.array y_true: array of boolean ints (0, 1) which indicate the class
             is true prediction; each row in the array is a sample; each column is a class
-        :rtype: float
+        :rtype: numpy.array
         :return: categorical cross-entorpy loss of a network
         '''
-        int_num_samples = y_pred.shape[0]
+        # number of sample in batch
+        int_num_samples = len(y_pred)
+
+        # clip data to prevent division by 0; clip both sides to not drag mean towards
+        # any value
+        y_pred_clipped = numpy.clip(y_pred, 1e-7, 1 - 1e-7)
+
+        # probabilities for target values (only if categorical labels)
         if len(y_true.shape) == 1:
-            y_pred = y_pred[range(0, int_num_samples), y_true]
+            y_pred_clipped = y_pred_clipped[range(0, int_num_samples), y_true]
+
+        # losses
         array_neg_log_likelihoods = -numpy.log(y_pred)
+
+        # mask values (only for on-hot encoded labels)
         if len(y_true.shape) == 2:
             array_neg_log_likelihoods *= y_true
-        self.float_mean_loss = numpy.sum(array_neg_log_likelihoods) / int_num_samples
-        return self.float_mean_loss
+        
+        return array_neg_log_likelihoods
     
     def backward(self, dvalues, y_true):
         '''
         '''
-        int_num_samples = dvalues.shape[0]
-        self.dvalues = dvalues.copy()
-        self.dvalues[range(0, int_num_samples), y_true] -= 1
-        self.dvalues = self.dvalues / int_num_samples
- 
+        int_num_samples = len(dvalues)
+        self.dinputs = dvalues.copy()
+        self.dinputs[range(0, int_num_samples), y_true] -= 1
+        self.dinputs = self.dinputs / int_num_samples
+
 class Optimizer_SGD(object):
     '''
     '''
@@ -358,6 +466,44 @@ class Optimizer_Adam(object):
         '''
         '''
         self.iterations += 1
+
+class Activation_Softmax_Loss_CategoricalCrossentropy():
+    '''
+    '''
+    
+    def __init__(self):
+        '''
+        constructor
+        '''
+        self.activation = Activation_Softmax()
+        self.loss = Loss_CategoricalCrossetropy()
+        self.output = None
+        self.dinputs = None
+    
+    def forward(self, inputs, y_true):
+        '''
+        '''
+        # output layer's activtion function
+        self.activation.forward(inputs)
+
+        # set ouput
+        self.output = self.activation.output
+
+        # calculate and return loss value
+        return self.loss.calculate(self.output, y_true)
+    
+    def backward(self, dvalues, y_true):
+        '''
+        '''
+        # number of samples
+        num_samples = len(dvalues)
+
+        # calculate gradient
+        self.dinputs = dvalues.copy()
+        self.dinputs[range(0, num_samples), y_true] -= 1
+
+        # normalize gradient
+        self.dinputs = self.dinputs / num_samples
 
 '''
 apply functions
