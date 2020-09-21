@@ -489,7 +489,7 @@ class Activation_Softmax_Loss_CategoricalCrossentropy():
         # output layer's activtion function
         self.activation.forward(inputs)
 
-        # set ouput
+        # set output
         self.output = self.activation.output
 
         # calculate and return loss value
