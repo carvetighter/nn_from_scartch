@@ -43,14 +43,14 @@ class Layer_Dense(object):
     '''
 
     # constructor
-    def __init__(self, inputs, neurons, weight_regularization_l1 = 0.,
+    def __init__(self, num_inputs, num_neurons, weight_regularization_l1 = 0.,
         weight_regularization_l2 = 0., bias_regularization_l1 = 0.,
         bias_regularization_l2 = 0.):
         '''
         '''
         # initial weight & bias
-        self.weights = 0.01 * numpy.random.randn(inputs, neurons)
-        self.biases = numpy.zeros(shape = (1, neurons))
+        self.weights = 0.01 * numpy.random.randn(num_inputs, num_neurons)
+        self.biases = numpy.zeros(shape = (1, num_neurons))
 
         # regularization
         self.weight_regularization_l1 = weight_regularization_l1
@@ -176,6 +176,9 @@ class Loss(object):
     def regularization_loss(self, layer):
         '''
         '''
+        # set-up
+        self.float_regularization_loss = 0
+
         # l1 regularization (weights); calculate only when factor > 0
         if layer.weight_regularization_l1 > 0.:
             self.float_regularization_loss += layer.weight_regularization_l1 * \
@@ -243,7 +246,7 @@ class Loss_CategoricalCrossetropy(Loss):
             y_pred_clipped = y_pred_clipped[range(0, int_num_samples), y_true]
 
         # losses
-        array_neg_log_likelihoods = -numpy.log(y_pred)
+        array_neg_log_likelihoods = -numpy.log(y_pred_clipped)
 
         # mask values (only for on-hot encoded labels)
         if len(y_true.shape) == 2:
@@ -276,7 +279,7 @@ class Optimizer_SGD(object):
         '''
         '''
         if self.decay:
-            self.current_learning_rate = self.current_learning_rate * \
+            self.current_learning_rate = self.learning_rate * \
                 (1. / (1. + self.decay * self.iterations))
 
     def update_params(self, layer):
@@ -327,7 +330,7 @@ class Optimizer_Adagrad(object):
         '''
         '''
         if self.decay:
-            self.current_learning_rate = self.current_learning_rate * \
+            self.current_learning_rate = self.learning_rate * \
                 (1. / (1. + self.decay * self.iterations))
 
     def update_params(self, layer):
@@ -371,7 +374,7 @@ class Optimizer_RMSprop(object):
         '''
         '''
         if self.decay:
-            self.current_learning_rate = self.current_learning_rate * \
+            self.current_learning_rate = self.learning_rate * \
                 (1. / (1. + self.decay * self.iterations))
 
     def update_params(self, layer):
@@ -419,7 +422,7 @@ class Optimizer_Adam(object):
         '''
         '''
         if self.decay:
-            self.current_learning_rate = self.current_learning_rate * \
+            self.current_learning_rate = self.learning_rate * \
                 (1. / (1. + self.decay * self.iterations))
 
     def update_params(self, layer):
