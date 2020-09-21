@@ -106,6 +106,36 @@ class Layer_Dense(object):
         # gradients on values
         self.dinputs = numpy.dot(dvalues, self.weights.T)
 
+class Layer_Dropout(object):
+    '''
+    '''
+    def __init__(self, rate):
+        '''
+        constructor
+        '''
+        self.rate = 1 - rate
+        self.inputs = None
+        self.output = None
+        self.dinputs = None
+        self.binary_mask = None
+    
+    def forward(self, inputs):
+        '''
+        '''
+        # generate and save scaled mask
+        self.inputs = inputs
+        self.binary_mask = numpy.random.binomial(1, self.rate, size = inputs.shape) \
+            / self.rate
+        
+        # apply mask to output values
+        self.output = self.binary_mask * inputs
+    
+    def backward(self, dvalues):
+        '''
+        '''
+        # gradient on values
+        self.dinputs = dvalues * self.binary_mask
+
 class Activation_ReLU(object):
     def __init__(self):
         '''
@@ -224,7 +254,7 @@ class Loss_CategoricalCrossetropy(Loss):
     
     def forward(self, y_pred, y_true):
         '''
-        method used to predict the corss entorpy loss; usually after the softmax of the 
+        method used to predict the cross entorpy loss; usually after the softmax of the 
         output layer
 
         :param numpy.array y_pred: array of floats by class which are the probibilites of
@@ -248,7 +278,7 @@ class Loss_CategoricalCrossetropy(Loss):
         # losses
         array_neg_log_likelihoods = -numpy.log(y_pred_clipped)
 
-        # mask values (only for on-hot encoded labels)
+        # mask values (only for one-hot encoded labels)
         if len(y_true.shape) == 2:
             array_neg_log_likelihoods *= y_true
         
