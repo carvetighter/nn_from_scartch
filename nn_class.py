@@ -49,7 +49,7 @@ class Layer_Dense(object):
         '''
         '''
         # initial weight & bias
-        self.weights = 0.01 * numpy.random.randn(num_inputs, num_neurons)
+        self.weights = 0.1 * numpy.random.randn(num_inputs, num_neurons)
         self.biases = numpy.zeros(shape = (1, num_neurons))
 
         # regularization
@@ -216,6 +216,28 @@ class Activation_Sigmoid(object):
         # deriviative, calculates from output of sigmoid function
         self.dinputs = dvalues * (1 - self.output) * self.output
 
+class Activation_Linear(object):
+    '''
+    '''
+    def __init__(self):
+        '''
+        '''
+        self.inputs = None
+        self.output = None
+        self.dinputs = None
+
+    def forward(self, inputs):
+        '''
+        '''
+        self.inputs = inputs
+        self.output = inputs
+    
+    def backward(self, dvalues):
+        '''
+        '''
+        # derivitive
+        self.dinputs = dvalues.copy()
+
 class Loss(object):
     '''
     base class for loss calculations
@@ -349,6 +371,34 @@ class Loss_BinaryCrossentropy(Loss):
         # caclulate gradient
         self.dinputs = -(y_true / clipped_dvalues - (1 - y_true) / (1  - clipped_dvalues))
         self.dinputs = self.dinputs / n_samples        
+
+class Loss_MeanSquaredError(Loss):
+    '''
+    '''
+    def __init__(self):
+        '''
+        '''
+        super(Loss_MeanSquaredError, self).__init__()
+        self.dinputs = None
+
+    def forward(self, y_pred, y_true):
+        '''
+        '''
+        # calcualte and return loss
+        sample_loss = numpy.mean((y_true - y_pred)**2, axis = -1)
+        return sample_loss
+    
+    def backward(self, dvalues, y_true):
+        '''
+        '''
+        # number of samples
+        n_samples = len(dvalues)
+
+        # calculate gradient
+        self.dinputs = -2 * (y_true - dvalues)
+
+        # normalize gradient
+        self.dinputs = self.dinputs / n_samples
 
 class Optimizer_SGD(object):
     '''
