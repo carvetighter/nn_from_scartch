@@ -71,7 +71,7 @@ class Model(object):
         self.optimizer = optimizer
         self.accuracy = accuracy
     
-    def train(self, X, y, *, epochs = 1, print_every = 1):
+    def train(self, X, y, *, epochs = 1, print_every = 1, validation_data = None):
         '''
         '''
         # inialize accuracy
@@ -83,8 +83,9 @@ class Model(object):
             output = self.forward(X)
 
             # calculate loss
-            data_loss, regularization_loss = self.loss.calculate(output, y)
-            loss = data_loss + regularization_loss
+            data_loss, regularization_loss = self.loss.calculate(output, y,
+                include_regularization_loss = True)
+            train_loss = data_loss + regularization_loss
 
             # get predictions and caclulate accuracy
             predictions = self.output_layer_activation.predictions(output)
@@ -102,7 +103,7 @@ class Model(object):
             # print summary
             if not epoch % print_every:
                 print('ddd for epoch {}: loss = {:.5f} ddd'.format(
-                    epoch, loss)
+                    epoch, train_loss)
                 )
                 print('ddd for epoch {}: data loss = {:.5f} ddd'.format(
                     epoch, data_loss)
@@ -116,6 +117,25 @@ class Model(object):
                 print('ddd for epoch {}: learning rate = {:.5f} ddd\n'.format(
                     epoch, self.optimizer.current_learning_rate)
                 )
+
+        # if there is validation data
+        if validation_data is not None:
+            # split tuple
+            X_val, y_val = validation_data
+
+            # forward pass
+            output = self.forward(X_val)
+
+            # calculate loss
+            loss = self.loss.calculate(output, y_val)
+
+            # get predictions
+            predictions = self.output_layer_activation.predictions(output)
+            accuracy = self.accuracy.calculate(predictions, y_val)
+
+            # print test results
+            string_test_results = 'ddd test results -> loss = {:.5f}, accuracy = {:.5f} ddd'
+            print(string_test_results.format(loss, accuracy))
 
     def finalize(self):
         '''
@@ -217,6 +237,24 @@ class Accuracy_Regression(Accuracy):
         '''
         '''
         return numpy.absolute(predictions - y) < self.precision
+
+class Accuracy_Categorical(Accuracy):
+    '''
+    '''
+    def __init__(self):
+        '''
+        '''
+        super(Accuracy_Categorical, self).__init__()
+    
+    def init(self, y):
+        '''
+        '''
+        pass
+    
+    def compare(self, predictions, y):
+        '''
+        '''
+        return predictions == y
 
 class Layer_Input(object):
     '''
@@ -472,7 +510,7 @@ class Loss(object):
         '''
         '''
         # set-up
-        self.float_regularization_loss = 0
+        self.float_regularization_loss = 0.
 
         # l1 regularization (weights); calculate only when factor > 0
         for layer in self.trainable_layers:
@@ -497,7 +535,7 @@ class Loss(object):
         
         return self.float_regularization_loss
     
-    def calculate(self, output, y):
+    def calculate(self, output, y, *, include_regularization_loss = False):
         '''
         '''
         # calculate sample loss
@@ -506,6 +544,9 @@ class Loss(object):
         # calculate mean loss
         self.float_data_loss = numpy.mean(sample_loss)
 
+        if not include_regularization_loss:
+            return self.float_data_loss
+        
         return self.float_data_loss, self.regularization_loss()
     
 class Loss_CategoricalCrossetropy(Loss):

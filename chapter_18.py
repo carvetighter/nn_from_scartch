@@ -237,7 +237,7 @@ model.finalize()
 train the model
 '''
 
-model.train(X, y, epochs = 10000, print_every = 1000)
+model.train(X, y, epochs = 10000, print_every = 1000, validation_data = (X_test, y_test))
 
 '''
 test the model
