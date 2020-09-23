@@ -163,6 +163,8 @@ layer size 512 w/ regularization, dropout @ 10%:
 
 Chapter 18 notes:
 implementing the Model class
+
+** left off at page 36 of chapter 18
 '''
 
 '''
