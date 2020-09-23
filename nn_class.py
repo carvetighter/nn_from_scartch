@@ -127,7 +127,7 @@ class Model(object):
             output = self.forward(X_val)
 
             # calculate loss
-            loss = self.loss.calculate(output, y_val)
+            val_loss = self.loss.calculate(output, y_val)
 
             # get predictions
             predictions = self.output_layer_activation.predictions(output)
@@ -135,7 +135,7 @@ class Model(object):
 
             # print test results
             string_test_results = 'ddd test results -> loss = {:.5f}, accuracy = {:.5f} ddd'
-            print(string_test_results.format(loss, accuracy))
+            print(string_test_results.format(val_loss, accuracy))
 
     def finalize(self):
         '''
