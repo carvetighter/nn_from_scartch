@@ -38,6 +38,199 @@ def create_data(m_int_points, m_int_classes):
 classes
 '''
 
+class Model(object):
+    '''
+    '''
+    def __init__(self):
+        '''
+        constructor
+        '''
+        self.layers = list()
+        self.loss = None
+        self.optimizer = None
+        self.input_layer = None
+        self.output_layer_activation = None
+        self.trainable_layers = list()
+        self.accuracy = None
+    
+    def add(self, layer):
+        '''
+        adds laye4rs to the model
+        '''
+        self.layers.append(layer)
+    
+    def set(self, *, loss, optimizer, accuracy):
+        '''
+        set loss and optimizer
+
+        note:
+        * -> makes the arguements following required key word arguements; will need 
+             to name and set values explicitly
+        '''
+        self.loss = loss
+        self.optimizer = optimizer
+        self.accuracy = accuracy
+    
+    def train(self, X, y, *, epochs = 1, print_every = 1):
+        '''
+        '''
+        # inialize accuracy
+        self.accuracy.init(y)
+
+        # main training loop
+        for epoch in range(1, epochs + 1):
+            # forward pass
+            output = self.forward(X)
+
+            # calculate loss
+            data_loss, regularization_loss = self.loss.calculate(output, y)
+            loss = data_loss + regularization_loss
+
+            # get predictions and caclulate accuracy
+            predictions = self.output_layer_activation.predictions(output)
+            accuracy = self.accuracy.calculate(predictions, y)
+
+            # backward pass
+            self.backward(output, y)
+
+            # optimize (update parameters)
+            self.optimizer.pre_update_params()
+            for layer in self.trainable_layers:
+                self.optimizer.update_params(layer)
+            self.optimizer.post_update_params()
+
+            # print summary
+            if not epoch % print_every:
+                print('ddd for epoch {}: loss = {:.5f} ddd'.format(
+                    epoch, loss)
+                )
+                print('ddd for epoch {}: data loss = {:.5f} ddd'.format(
+                    epoch, data_loss)
+                )
+                print('ddd for epoch {}: regularization loss = {:.5f} ddd'.format(
+                    epoch, regularization_loss)
+                )
+                print('ddd for epoch {}: accuracy = {:.5f} ddd'.format(
+                    epoch, accuracy)
+                )
+                print('ddd for epoch {}: learning rate = {:.5f} ddd\n'.format(
+                    epoch, self.optimizer.current_learning_rate)
+                )
+
+    def finalize(self):
+        '''
+        '''
+        # create and set input layer
+        self.input_layer = Layer_Input()
+
+        # count objects in layers
+        layer_count = len(self.layers)
+
+        # iterate of objects
+        for i in range(0, layer_count):
+            # if first layer the previous called object will be the input layer
+            if i == 0:
+                self.layers[i].prev = self.input_layer
+                self.layers[i].next = self.layers[i + 1]
+            elif i < layer_count - 1:
+                self.layers[i].prev = self.layers[ i - 1]
+                self.layers[i].next = self.layers[i + 1]
+            # if last layer the next layer is loss
+            # need to save reference to last object which is the model output
+            else:
+                self.layers[i].prev = self.layers[i - 1]
+                self.layers[i].next = self.loss
+                self.output_layer_activation = self.layers[i]
+            
+            # if layer has attribute "weights" then it's iterable
+            # add to list of iterable layers
+            if hasattr(self.layers[i], 'weights'):
+                self.trainable_layers.append(self.layers[i])
+            
+            # update loss object with trainable layers
+            self.loss.remember_trainable_layers(self.trainable_layers)
+            
+    def forward(self, X):
+        '''
+        '''
+        # call forward method for input layer; this will set our output property that
+        # the first layer is expecting in the 'prev' object
+        self.input_layer.forward(X)
+
+        # call forward method of every object in the chain; pass output of the previous
+        # object as a parameter
+        for layer in self.layers:
+            layer.forward(layer.prev.output)
+        
+        # return the last layer from the list; in this case would be the last activation
+        # layer
+        return layer.output
+
+    def backward(self, output, y):
+        '''
+        '''
+        # first call backward method of loss; this will set dinputs property of the
+        # last layer
+        self.loss.backward(output, y)
+
+        # call backward method of through all objects in reverse order passing dinputs
+        # as the parameter
+        for layer in reversed(self.layers):
+            layer.backward(layer.next.dinputs)
+        
+class Accuracy(object):
+    '''
+    '''
+    def __init__(self):
+        '''
+        '''
+        pass
+    
+    def calculate(self, predictions, y):
+        '''
+        '''
+        # get comparison results
+        comparisons = self.compare(predictions, y)
+
+        # calculate accuracy
+        accuracy = numpy.mean(comparisons)
+
+        # return accuracy
+        return accuracy
+
+class Accuracy_Regression(Accuracy):
+    '''
+    '''
+    def __init__(self):
+        '''
+        '''
+        super(Accuracy_Regression, self).__init__()
+        self.precision = None
+    
+    def init(self, y, reinit = False):
+        '''
+        '''
+        if self.precision is None or reinit:
+            self.precision = numpy.std(y) / 250
+    
+    def compare(self, predictions, y):
+        '''
+        '''
+        return numpy.absolute(predictions - y) < self.precision
+
+class Layer_Input(object):
+    '''
+    '''
+    def __init__(self):
+        '''
+        '''
+        self.output = None
+    
+    def forward(self, inputs):
+        '''
+        '''
+        self.output = inputs
+
 class Layer_Dense(object):
     '''
     '''
@@ -156,6 +349,11 @@ class Activation_ReLU(object):
         self.dinputs = dvalues.copy()
         self.dinputs[self.inputs <= 0] = 0
 
+    def predictions(self, outputs):
+        '''
+        '''
+        return outputs
+
 class Activation_Softmax(object):
     '''
     '''
@@ -193,6 +391,11 @@ class Activation_Softmax(object):
             # calculate sample-wise gradient
             self.dinputs[index] = numpy.dot(jacobian_matrix, single_dvalues)
 
+    def predictions(self, outputs):
+        '''
+        '''
+        return numpy.argmax(outputs, axis = 1)
+
 class Activation_Sigmoid(object):
     '''
     '''
@@ -216,6 +419,11 @@ class Activation_Sigmoid(object):
         # deriviative, calculates from output of sigmoid function
         self.dinputs = dvalues * (1 - self.output) * self.output
 
+    def predictions(self, outputs):
+        '''
+        '''
+        return (outputs > 0.5) * 1
+
 class Activation_Linear(object):
     '''
     '''
@@ -238,6 +446,11 @@ class Activation_Linear(object):
         # derivitive
         self.dinputs = dvalues.copy()
 
+    def predictions(self, outputs):
+        '''
+        '''
+        return outputs
+
 class Loss(object):
     '''
     base class for loss calculations
@@ -247,32 +460,40 @@ class Loss(object):
         '''
         self.float_regularization_loss = 0.
         self.float_data_loss = 0.
+        self.trainable_layers = None
     
-    def regularization_loss(self, layer):
+    def remember_trainable_layers(self, trainable_layers):
+        '''
+        remember trainable layers
+        '''
+        self.trainable_layers = trainable_layers
+
+    def regularization_loss(self):
         '''
         '''
         # set-up
         self.float_regularization_loss = 0
 
         # l1 regularization (weights); calculate only when factor > 0
-        if layer.weight_regularization_l1 > 0.:
-            self.float_regularization_loss += layer.weight_regularization_l1 * \
-                numpy.sum(numpy.abs(layer.weights))
-        
-        # l2 regularization (weights)
-        if layer.weight_regularization_l2 > 0.:
-            self.float_regularization_loss += layer.weight_regularization_l2 * \
-                numpy.sum(layer.weights * layer.weights)
-        
-        # l1 regularization (biases); calculate when factor > 0
-        if layer.bias_regularization_l1 > 0.:
-            self.float_regularization_loss += layer.bias_regularization_l1 * \
-                numpy.sum(numpy.abs(layer.biases))
-        
-        # l2 regularization (biases)
-        if layer.bias_regularization_l2 > 0.:
-            self.float_regularization_loss += layer.bias_regularization_l2 * \
-                numpy.sum(layer.biases * layer.biases)
+        for layer in self.trainable_layers:
+            if layer.weight_regularization_l1 > 0.:
+                self.float_regularization_loss += layer.weight_regularization_l1 * \
+                    numpy.sum(numpy.abs(layer.weights))
+
+            # l2 regularization (weights)
+            if layer.weight_regularization_l2 > 0.:
+                self.float_regularization_loss += layer.weight_regularization_l2 * \
+                    numpy.sum(layer.weights * layer.weights)
+
+            # l1 regularization (biases); calculate when factor > 0
+            if layer.bias_regularization_l1 > 0.:
+                self.float_regularization_loss += layer.bias_regularization_l1 * \
+                    numpy.sum(numpy.abs(layer.biases))
+
+            # l2 regularization (biases)
+            if layer.bias_regularization_l2 > 0.:
+                self.float_regularization_loss += layer.bias_regularization_l2 * \
+                    numpy.sum(layer.biases * layer.biases)
         
         return self.float_regularization_loss
     
@@ -285,7 +506,7 @@ class Loss(object):
         # calculate mean loss
         self.float_data_loss = numpy.mean(sample_loss)
 
-        return self.float_data_loss
+        return self.float_data_loss, self.regularization_loss()
     
 class Loss_CategoricalCrossetropy(Loss):
     '''
