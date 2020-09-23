@@ -193,6 +193,29 @@ class Activation_Softmax(object):
             # calculate sample-wise gradient
             self.dinputs[index] = numpy.dot(jacobian_matrix, single_dvalues)
 
+class Activation_Sigmoid(object):
+    '''
+    '''
+    def __init__(self):
+        '''
+        '''
+        self.inputs = None
+        self.output = None
+        self.dinputs = None
+
+    def forward(self, inputs):
+        '''
+        '''
+        # calcualte sigmoid of inputs
+        self.inputs = inputs
+        self.output = 1/ (1 + numpy.exp(-inputs))
+    
+    def backward(self, dvalues):
+        '''
+        '''
+        # deriviative, calculates from output of sigmoid function
+        self.dinputs = dvalues * (1 - self.output) * self.output
+
 class Loss(object):
     '''
     base class for loss calculations
@@ -291,6 +314,41 @@ class Loss_CategoricalCrossetropy(Loss):
         self.dinputs = dvalues.copy()
         self.dinputs[range(0, int_num_samples), y_true] -= 1
         self.dinputs = self.dinputs / int_num_samples
+
+class Loss_BinaryCrossentropy(Loss):
+    '''
+    '''
+    def __init__(self):
+        '''
+        '''
+        super(Loss_BinaryCrossentropy, self).__init__()
+        self.dinputs = None
+
+    def forward(self, y_pred, y_true):
+        '''
+        '''
+        # clip data to prevent divide by zero
+        y_pred_clipped = numpy.clip(y_pred, 1e-7, 1 - 1e-7)
+
+        # calculate sample-wise loss
+        sample_loss = -(y_true * numpy.log(y_pred_clipped) + 
+            (1 - y_true) * numpy.log(1 - y_pred_clipped))
+        sample_loss = numpy.mean(sample_loss, axis = -1)
+
+        return sample_loss
+    
+    def backward(self, dvalues, y_true):
+        '''
+        '''
+        # number of samples
+        n_samples = len(dvalues)
+
+        # clip to prevent divide by zero
+        clipped_dvalues = numpy.clip(dvalues, 1e-7, 1 - 1e-7)
+
+        # caclulate gradient
+        self.dinputs = -(y_true / clipped_dvalues - (1 - y_true) / (1  - clipped_dvalues))
+        self.dinputs = self.dinputs / n_samples        
 
 class Optimizer_SGD(object):
     '''
