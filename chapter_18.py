@@ -242,30 +242,10 @@ train the model
 model.train(X, y, epochs = 10000, print_every = 1000, validation_data = (X_test, y_test))
 
 '''
-test the model
+plot test results
 '''
 '''
-# nn forward pass
-dense1.forward(X_test)
-activation1.forward(dense1.output)
-dense2.forward(activation1.output)
-activation2.forward(dense2.output)
-dense3.forward(activation2.output)
-activation3.forward(dense3.output)
-float_test_loss = loss_function.calculate(activation3.output, y_test)
-
-# nn performance metrics & predictions
-array_y_test_pred = activation3.output
-float_test_accuracy = numpy.mean(
-    numpy.absolute(array_y_test_pred - y_test) < accuracy_precision
-)
-
-# results
-string_test_results = 'ddd test results -> loss = {:.5f}, accuracy = {:.5f} ddd'
-print(string_test_results.format(float_test_loss, float_test_accuracy))
-
-# plot test results
 pyplot.plot(X_test, y_test)
-pyplot.plot(X_test, activation3.output)
+pyplot.plot(X_test, model.layers[-1].output)
 pyplot.show()
 '''
