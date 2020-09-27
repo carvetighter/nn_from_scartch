@@ -233,7 +233,7 @@ model.set(
 )
 
 # finalize
-model.finalize()
+# model.finalize()
 
 '''
 train the model

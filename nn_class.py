@@ -1,5 +1,11 @@
 '''
-<file doc string>
+this file holds the classes / framework to run a deep neural network for some
+classification and regression applications
+
+Below are the fundemental types of classes:
+
+Layer classes -> these classes are used to develop the 
+
 '''
 
 '''
@@ -40,7 +46,20 @@ classes
 
 class Model(object):
     '''
+    model class which is the orchestrator for the neural network
+
+    callable methods:
+    add() -> add layers, activtion & dense, to the model
+
+    set() -> sets the loss, optimizer, accuracy measures of the model
+
+    train() -> trains the model
     '''
+
+    '''
+    callable methods
+    '''
+    
     def __init__(self):
         '''
         constructor
@@ -61,7 +80,9 @@ class Model(object):
     
     def set(self, *, loss, optimizer, accuracy):
         '''
-        set loss and optimizer
+        set loss, optimizer, accuracy
+
+        this method finalizes the model; getting the model ready to train
 
         note:
         * -> makes the arguements following required key word arguements; will need 
@@ -70,6 +91,9 @@ class Model(object):
         self.loss = loss
         self.optimizer = optimizer
         self.accuracy = accuracy
+
+        # finalize model
+        self.finalize()
     
     def train(self, X, y, *, epochs = 1, print_every = 1, validation_data = None):
         '''
@@ -137,6 +161,10 @@ class Model(object):
             string_test_results = 'ddd test results -> loss = {:.5f}, accuracy = {:.5f} ddd'
             print(string_test_results.format(val_loss, accuracy))
 
+    '''
+    supportive methods
+    '''
+
     def finalize(self):
         '''
         '''
@@ -155,6 +183,7 @@ class Model(object):
             elif i < layer_count - 1:
                 self.layers[i].prev = self.layers[ i - 1]
                 self.layers[i].next = self.layers[i + 1]
+            
             # if last layer the next layer is loss
             # need to save reference to last object which is the model output
             else:
